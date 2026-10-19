@@ -1,0 +1,610 @@
+/* 全局重設與基底設定 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --font-main: "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+  --bg-color: #0d1127;
+  --card-bg: rgba(26, 34, 70, 0.85);
+  --p1-theme: #ff477e;
+  --p1-light: #ff85a1;
+  --p2-theme: #00b4d8;
+  --p2-light: #90e0ef;
+  --gold: #ffd166;
+  --white: #ffffff;
+  --text-dim: #c5d0e6;
+  --radius: 16px;
+}
+
+body {
+  font-family: var(--font-main);
+  background: radial-gradient(circle at 50% 20%, #1d2656, var(--bg-color));
+  color: var(--white);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 全螢幕閃光 (答對時 0.5s 閃爍 3 次) */
+.flash-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 999;
+}
+
+.flash-overlay.active {
+  animation: triple-flash 0.5s ease-in-out;
+}
+
+@keyframes triple-flash {
+  0% { opacity: 0; }
+  15% { opacity: 0.6; }
+  30% { opacity: 0.1; }
+  50% { opacity: 0.6; }
+  70% { opacity: 0.1; }
+  85% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* 雷射發射容器 */
+.laser-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.laser-beam {
+  position: absolute;
+  height: 8px;
+  background: linear-gradient(90deg, #fff, var(--gold), #ff0055);
+  border-radius: 4px;
+  box-shadow: 0 0 12px #fff, 0 0 20px var(--gold);
+  transform-origin: left center;
+  pointer-events: none;
+  transition: opacity 0.1s;
+}
+
+/* 通用彈窗與首頁排版 */
+.screen-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 1rem;
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+}
+
+.start-card {
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.game-title {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 15px rgba(255, 209, 102, 0.6);
+}
+
+.game-desc {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.setting-group {
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.setting-title {
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  color: #e2e8f0;
+}
+
+.radio-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-select {
+  flex: 1 1 30%;
+  min-height: 44px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--white);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.5rem;
+  transition: all 0.2s;
+}
+
+.btn-select.active {
+  background: var(--p2-theme);
+  border-color: #a0f0ff;
+  box-shadow: 0 0 10px rgba(0, 180, 216, 0.6);
+  font-weight: bold;
+}
+
+.sound-toggle-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.switch-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+}
+
+.switch-label input {
+  display: none;
+}
+
+.slider {
+  width: 48px;
+  height: 26px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 13px;
+  position: relative;
+  transition: 0.3s;
+}
+
+.slider::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  top: 3px;
+  left: 3px;
+  transition: 0.3s;
+}
+
+.switch-label input:checked + .slider {
+  background-color: #06d6a0;
+}
+
+.switch-label input:checked + .slider::after {
+  transform: translateX(22px);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn-primary, .btn-secondary {
+  flex: 1;
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff477e, #f72585);
+  color: white;
+  box-shadow: 0 4px 15px rgba(247, 37, 133, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.btn-primary:active, .btn-secondary:active {
+  transform: scale(0.96);
+}
+
+/* 遊戲中版面 */
+.battle-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  position: relative;
+}
+
+.battle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  background: rgba(10, 15, 35, 0.8);
+  height: 48px;
+  z-index: 20;
+}
+
+.header-info {
+  font-weight: bold;
+  font-size: 1rem;
+  color: var(--gold);
+}
+
+.btn-header {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.25rem 0.75rem;
+  min-height: 36px;
+  cursor: pointer;
+}
+
+/* 左右競技場容器 */
+.arena-container {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: calc(100vh - 48px);
+  height: calc(100dvh - 48px);
+  position: relative;
+  overflow: hidden;
+}
+
+.player-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  overflow: hidden;
+}
+
+#p1-section {
+  background: linear-gradient(180deg, rgba(255, 71, 126, 0.08) 0%, rgba(20, 25, 55, 0.7) 100%);
+  border-right: 2px dashed rgba(255, 255, 255, 0.15);
+}
+
+#p2-section {
+  background: linear-gradient(180deg, rgba(0, 180, 216, 0.08) 0%, rgba(20, 25, 55, 0.7) 100%);
+}
+
+.player-inner {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+}
+
+.player-badge {
+  font-size: 0.85rem;
+  font-weight: bold;
+  padding: 0.2rem 0.8rem;
+  border-radius: 20px;
+  margin-bottom: 0.4rem;
+}
+
+#p1-section .player-badge {
+  background: var(--p1-theme);
+  box-shadow: 0 0 10px rgba(255, 71, 126, 0.4);
+}
+
+#p2-section .player-badge {
+  background: var(--p2-theme);
+  box-shadow: 0 0 10px rgba(0, 180, 216, 0.4);
+}
+
+/* 小精靈外觀 */
+.spirit-wrapper {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.spirit {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), inset -3px -3px 8px rgba(0,0,0,0.2), inset 3px 3px 8px rgba(255,255,255,0.4);
+  transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.spirit.idle {
+  animation: float 2.5s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.spirit.correct-jump {
+  animation: jump 0.4s ease;
+}
+
+@keyframes jump {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.15) translateY(-16px); }
+}
+
+.spirit.hit-shake {
+  animation: hit 0.4s ease;
+}
+
+@keyframes hit {
+  0%, 100% { transform: translateX(0); filter: brightness(1); }
+  25% { transform: translateX(-12px) scale(0.9); filter: brightness(2) drop-shadow(0 0 10px red); }
+  50% { transform: translateX(10px); }
+  75% { transform: translateX(-6px); }
+}
+
+.spirit-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #1a1a24;
+  font-weight: 900;
+}
+
+.spirit-eyes {
+  font-size: 1.1rem;
+  letter-spacing: 4px;
+  line-height: 1;
+}
+
+.spirit-mouth {
+  font-size: 0.85rem;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* 生命值 */
+.health-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0.6rem;
+}
+
+.heart-icon {
+  font-size: 1.15rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.heart-icon.lost {
+  opacity: 0.2;
+  filter: grayscale(1);
+  transform: scale(0.75);
+}
+
+/* 題目容器 (MathJax) */
+.question-container {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  width: 100%;
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  margin-bottom: 0.4rem;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.math-question {
+  font-size: clamp(1.2rem, 3.2vw, 1.8rem);
+  color: var(--white);
+  font-weight: bold;
+}
+
+/* 回饋文字 */
+.feedback-text {
+  min-height: 22px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 0.4rem;
+  text-align: center;
+}
+
+.feedback-text.correct { color: #06d6a0; }
+.feedback-text.wrong { color: #ff5a5f; }
+
+/* 選項四宮格按鈕 */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.btn-option {
+  min-height: 52px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 12px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-option:active:not(:disabled) {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.btn-option.correct-btn {
+  background: #06d6a0 !important;
+  border-color: #b7efc5;
+}
+
+.btn-option.wrong-btn {
+  background: #ef476f !important;
+  border-color: #ffd166;
+}
+
+/* 花瓣雨容器 */
+.petal-box {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.petal {
+  position: absolute;
+  top: -20px;
+  border-radius: 15px 0 15px 0;
+  opacity: 0.85;
+  animation: fall linear forwards;
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(0) rotate(0deg) translateX(0);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(105vh) rotate(540deg) translateX(40px);
+    opacity: 0;
+  }
+}
+
+/* 平板對戰旋轉模式 (Facing Mode) */
+.arena-container.tablet-layout {
+  grid-template-columns: 1fr 1fr;
+}
+
+.arena-container.tablet-layout #p1-inner {
+  transform: rotate(90deg);
+  transform-origin: center center;
+}
+
+.arena-container.tablet-layout #p2-inner {
+  transform: rotate(-90deg);
+  transform-origin: center center;
+}
+
+/* 結算彈窗 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 500;
+  padding: 1rem;
+}
+
+.modal-content {
+  max-width: 480px;
+  width: 100%;
+}
+
+.game-over-card {
+  text-align: center;
+  border-color: var(--gold);
+}
+
+.winner-spirit-slot {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.winner-title {
+  color: var(--gold);
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.winner-subtitle {
+  color: #e2e8f0;
+  font-size: 1.05rem;
+  margin-bottom: 1.5rem;
+}
+
+.rules-list {
+  text-align: left;
+  list-style: none;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* 尊重使用者減少動態偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .spirit.idle, .petal, .flash-overlay.active {
+    animation: none !important;
+  }
+  .laser-beam {
+    display: none !important;
+  }
+}
+
+/* 小型直式螢幕優化 */
+@media (max-width: 600px) {
+  .options-grid {
+    gap: 0.4rem;
+  }
+  .btn-option {
+    min-height: 44px;
+    font-size: 1.1rem;
+  }
+  .spirit {
+    width: 60px;
+    height: 60px;
+  }
+  .spirit-eyes { font-size: 0.95rem; }
+  .heart-icon { font-size: 1rem; }
+}

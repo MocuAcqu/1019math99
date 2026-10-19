@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>九九乘法大亂鬥 - 雙人即時對戰</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- MathJax 3 載入設定（需網路連線載入 CDN） -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+      },
+      svg: {
+        fontCache: 'global'
+      },
+      startup: {
+        ready: () => {
+          MathJax.startup.defaultReady();
+          window.isMathJaxReady = true;
+        }
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <!-- 全螢幕閃光層 (答對時觸發) -->
+  <div id="flash-overlay" class="flash-overlay" aria-hidden="true"></div>
+
+  <!-- 雷射動畫軌道層 -->
+  <div id="laser-layer" class="laser-layer" aria-hidden="true"></div>
+
+  <!-- 遊戲首頁容器 -->
+  <main id="start-screen" class="screen-container">
+    <div class="card start-card">
+      <h1 class="game-title">✨ 九九乘法大亂鬥 ✨</h1>
+      <p class="game-desc">雙人同機對戰！算得快、打得準，擊敗對手成為乘法大師！</p>
+
+      <div class="setting-group">
+        <label class="setting-title" for="difficulty-select">選擇難度</label>
+        <div class="radio-group" id="difficulty-select" role="radiogroup" aria-label="遊戲難度">
+          <button type="button" class="btn-select active" data-val="easy" role="radio" aria-checked="true">簡單 (1~5)</button>
+          <button type="button" class="btn-select" data-val="medium" role="radio" aria-checked="false">中等 (1~9)</button>
+          <button type="button" class="btn-select" data-val="hard" role="radio" aria-checked="false">困難 (交換律挑戰)</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label class="setting-title" for="mode-select">遊玩模式</label>
+        <div class="radio-group" id="mode-select" role="radiogroup" aria-label="遊玩模式">
+          <button type="button" class="btn-select active" data-val="normal" role="radio" aria-checked="true">一般觸屏模式</button>
+          <button type="button" class="btn-select" data-val="tablet" role="radio" aria-checked="false">平板面對面對戰 (旋轉)</button>
+        </div>
+      </div>
+
+      <div class="setting-group sound-toggle-group">
+        <label class="switch-label" for="sound-toggle">
+          <span>遊戲音效</span>
+          <input type="checkbox" id="sound-toggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="action-buttons">
+        <button id="btn-start" class="btn-primary">開始遊戲！</button>
+        <button id="btn-rules" class="btn-secondary">遊戲規則</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 規則說明彈窗 -->
+  <div id="rules-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content card">
+      <h2 id="modal-title">📖 遊戲規則說明</h2>
+      <ul class="rules-list">
+        <li>❤️ 雙方初始各有 <strong>7 點生命值</strong>。</li>
+        <li>⚡ <strong>答對</strong>：發射雷射攻擊對手，對手扣除 1 點生命值，並獲得花瓣雨慶祝。</li>
+        <li>💥 <strong>答錯</strong>：自身受到反噬，自己扣除 1 點生命值。</li>
+        <li>🏆 當任何一方生命值歸零，對手立即獲得勝利！</li>
+        <li>📱 平板模式下，左右畫面會旋轉 90 度，適合面對面雙人遊玩。</li>
+      </ul>
+      <button id="btn-close-rules" class="btn-primary">我明白了</button>
+    </div>
+  </div>
+
+  <!-- 戰鬥進行畫面 -->
+  <div id="battle-screen" class="battle-screen hidden">
+    <!-- 頂部控制列 -->
+    <header class="battle-header">
+      <button id="btn-back-home" class="btn-header" aria-label="返回首頁">首頁</button>
+      <div class="header-info">九九乘法大亂鬥</div>
+      <button id="btn-in-sound" class="btn-header" aria-label="切換音效">🔊 音效</button>
+    </header>
+
+    <!-- 左右分割主區域 -->
+    <div id="players-arena" class="arena-container normal-layout">
+      <!-- 玩家 1 (左側) -->
+      <section id="p1-section" class="player-panel" aria-label="玩家 1 區域">
+        <div id="p1-petal-box" class="petal-box" aria-hidden="true"></div>
+        <div class="player-inner" id="p1-inner">
+          <div class="player-badge">玩家 1</div>
+          
+          <!-- 小精靈 -->
+          <div class="spirit-wrapper">
+            <div id="p1-spirit" class="spirit idle">
+              <div class="spirit-decorations" id="p1-spirit-decor"></div>
+              <div class="spirit-face">
+                <div class="spirit-eyes" id="p1-spirit-eyes">◕ ◕</div>
+                <div class="spirit-mouth" id="p1-spirit-mouth">▽</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 生命值愛心 -->
+          <div class="health-bar" id="p1-health" aria-label="玩家 1 生命值"></div>
+
+          <!-- 題目區 (由 MathJax 渲染) -->
+          <div class="question-container">
+            <div class="math-question" id="p1-question">\( ? \times ? = ? \)</div>
+          </div>
+
+          <!-- 回饋文字 -->
+          <div class="feedback-text" id="p1-feedback" aria-live="polite"></div>
+
+          <!-- 四個答案選項按鈕 -->
+          <div class="options-grid" id="p1-options">
+            <button class="btn-option" data-idx="0">-</button>
+            <button class="btn-option" data-idx="1">-</button>
+            <button class="btn-option" data-idx="2">-</button>
+            <button class="btn-option" data-idx="3">-</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 玩家 2 (右側) -->
+      <section id="p2-section" class="player-panel" aria-label="玩家 2 區域">
+        <div id="p2-petal-box" class="petal-box" aria-hidden="true"></div>
+        <div class="player-inner" id="p2-inner">
+          <div class="player-badge">玩家 2</div>
+          
+          <!-- 小精靈 -->
+          <div class="spirit-wrapper">
+            <div id="p2-spirit" class="spirit idle">
+              <div class="spirit-decorations" id="p2-spirit-decor"></div>
+              <div class="spirit-face">
+                <div class="spirit-eyes" id="p2-spirit-eyes">◕ ◕</div>
+                <div class="spirit-mouth" id="p2-spirit-mouth">▽</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 生命值愛心 -->
+          <div class="health-bar" id="p2-health" aria-label="玩家 2 生命值"></div>
+
+          <!-- 題目區 (由 MathJax 渲染) -->
+          <div class="question-container">
+            <div class="math-question" id="p2-question">\( ? \times ? = ? \)</div>
+          </div>
+
+          <!-- 回饋文字 -->
+          <div class="feedback-text" id="p2-feedback" aria-live="polite"></div>
+
+          <!-- 四個答案選項按鈕 -->
+          <div class="options-grid" id="p2-options">
+            <button class="btn-option" data-idx="0">-</button>
+            <button class="btn-option" data-idx="1">-</button>
+            <button class="btn-option" data-idx="2">-</button>
+            <button class="btn-option" data-idx="3">-</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- 遊戲結算畫面 -->
+  <div id="game-over-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-content card game-over-card">
+      <div id="winner-celebration" class="winner-spirit-slot"></div>
+      <h2 id="winner-title" class="winner-title">勝負揭曉！</h2>
+      <p id="winner-subtitle" class="winner-subtitle">你真是太優秀了！九九乘法大師誕生！</p>
+      <div class="action-buttons">
+        <button id="btn-restart" class="btn-primary">再玩一次</button>
+        <button id="btn-return-home" class="btn-secondary">返回首頁</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
